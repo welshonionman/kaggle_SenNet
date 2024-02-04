@@ -1,0 +1,36 @@
+{
+    "fold0": {
+        "train": [
+            "kidney_2_sparse",
+            "kidney_3_dense",
+            "kidney_3_sparse"
+        ],
+        "valid": [
+            "kidney_1_dense"
+        ]
+    },
+    "fold1": {
+        "train": [
+            "kidney_1_dense",
+            "kidney_2_sparse"
+        ],
+        "valid": [
+            "kidney_3_dense"
+        ],
+        "": [
+            "kidney_3_sparse"
+        ]
+    },
+    "fold2": {
+        "train": [
+            "kidney_1_dense",
+            "kidney_3_dense"
+        ],
+        "valid": [
+            "kidney_2_sparse"
+        ],
+        "": [
+            "kidney_3_sparse"
+        ]
+    }
+}

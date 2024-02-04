@@ -4,16 +4,16 @@ import torch
 from torch.utils.data import DataLoader
 
 import wandb
-from src.model.loss import get_lossfn
-from src.model.metrics import get_metrics
-from src.dataset.common import get_dataset
-from src.utils.common import SlackNotify
 from src.model.model import build_model
+from src.model.loss import get_lossfn
+from src.utils.metrics import get_metrics
 from src.model.scheduler import get_scheduler
+from src.dataset.common import get_train_dataset
+from src.utils.common import SlackNotify
 
 
 def init_dataset(fold, df, cfg):
-    dataset = get_dataset(cfg)
+    dataset = get_train_dataset(cfg)
 
     train_df = df[df[f"fold{fold}"] == "train"]
     valid_df = df[df[f"fold{fold}"] == "valid"]
@@ -56,7 +56,7 @@ def init_exp(fold, cfg):
             notes=cfg.notes,
             config=cfg_dict,
             dir="/kaggle",
-            tags=[f"fold{fold}"]
+            tags=[f"fold{fold}"],
             # reinit=True,
         )
     os.makedirs(f"./{cfg.exp_name}/", exist_ok=True)

@@ -1,7 +1,9 @@
+import json
 import pandas as pd
 from glob import glob
 import numpy as np
 import matplotlib.pyplot as plt
+from src.dataset.common import get_train_dataset
 
 
 def get_info(fname, info_type):
@@ -19,7 +21,7 @@ def get_label_acc(fname):
 
 
 def get_kidney(fname):
-    return "_".join(fname.split("_")[-2])
+    return "_".join(fname.split("/")[-2].split("_")[:-1])
 
 
 def get_fold(x, dict):
@@ -31,26 +33,19 @@ def get_fold(x, dict):
         return ""
 
 
-def df_dataset(cfg):
-    fold_dict = {
-        "fold0": {
-            "train": ["kidney_1_dense", "kidney_2"],
-            "valid": ["kidney_3_dense"],
-            "": ["kidney_3_sparse"],
-        },
-        "fold1": {
-            "train": ["kidney_2", "kidney_3_dense", "kidney_3_sparse"],
-            "valid": ["kidney_1_dense"],
-        },
-    }
-
+def df_dataset(cfg, fold_json_path="/kaggle/working/dataset/stack_train01/fold.json"):
+    fold_dict = json.load(open(fold_json_path, "r"))
+    n_fold = len(fold_dict.keys())
     df = pd.DataFrame()
 
     df["image_path"] = sorted(glob(f"{cfg.dataset_path}/image/*/*.npy"))
     df["label_path"] = sorted(glob(f"{cfg.dataset_path}/label/*/*.npy"))
 
+    df["image_path"] = df["image_path"].str.replace("\\", "/")
+    df["label_path"] = df["label_path"].str.replace("\\", "/")
+
     df["fname"] = df["image_path"].str.split("/").str[-1].str.split(".").str[0]
-    df["kidney"] = df["image_path"].str.split("/").str[-2]
+    df["kidney"] = df["image_path"].apply(get_kidney)
 
     df["x"] = df["fname"].apply(get_info, info_type="x")
     df["y"] = df["fname"].apply(get_info, info_type="y")
@@ -59,12 +54,16 @@ def df_dataset(cfg):
     df["std"] = df["fname"].apply(get_info, info_type="std")
     df["sum"] = df["fname"].apply(get_info, info_type="sum")
 
-    df["fold0"] = df["kidney"].apply(get_fold, dict=fold_dict["fold0"])
-    df["fold1"] = df["kidney"].apply(get_fold, dict=fold_dict["fold1"])
+    for fold in range(n_fold):
+        df[f"fold{fold}"] = df["kidney"].apply(get_fold, dict=fold_dict[f"fold{fold}"])
+    # df["fold0"] = df["kidney"].apply(get_fold, dict=fold_dict["fold0"])
+    # df["fold1"] = df["kidney"].apply(get_fold, dict=fold_dict["fold1"])
+    # df["fold2"] = df["kidney"].apply(get_fold, dict=fold_dict["fold2"])
     return df
 
 
-def check_dataset(df, dataset, cfg):
+def check_dataset(df, cfg):
+    dataset = get_train_dataset(cfg)
     fold = 0
     train_dataset = dataset(df[df[f"fold{fold}"] == "train"], cfg, is_train=True)
     valid_dataset = dataset(df[df[f"fold{fold}"] == "valid"], cfg, is_train=False)

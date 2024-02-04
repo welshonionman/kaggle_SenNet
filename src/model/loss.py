@@ -1,6 +1,28 @@
+import numpy as np
+from scipy.ndimage import distance_transform_edt
 import torch
 import torch.nn as nn
 import segmentation_models_pytorch as smp
+from torch import Tensor, einsum
+from typing import List, cast
+
+
+def get_lossfn(cfg, smooth=0, mode="binary"):
+    lossfn = None
+    if cfg.loss == "DiceLoss":
+        lossfn = smp.losses.DiceLoss(mode=mode, smooth=smooth)
+    if cfg.loss == "BoundaryDiceLoss":
+        lossfn = BoundaryDiceLoss()
+    if cfg.loss == "Dice_BCE_Loss":
+        lossfn = DiceBCELoss()
+    if cfg.loss == "WCELoss":
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        pos_weight = torch.Tensor([7.31]).to(device)
+        lossfn = smp.losses.SoftBCEWithLogitsLoss(pos_weight=pos_weight)
+    if cfg.loss == "Dice_WCE_Loss":
+        lossfn = DiceWCELoss()
+
+    return lossfn
 
 
 class DiceBCELoss(nn.Module):
@@ -36,17 +58,3 @@ class DiceWCELoss(nn.Module):
         return loss
 
 
-def get_lossfn(cfg, smooth=0, mode="binary"):
-    lossfn = None
-    if cfg.loss == "DiceLoss":
-        lossfn = smp.losses.DiceLoss(mode=mode, smooth=smooth)
-    if cfg.loss == "Dice_BCE_Loss":
-        lossfn = DiceBCELoss()
-    if cfg.loss == "WCELoss":
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        pos_weight = torch.Tensor([7.31]).to(device)
-        lossfn = smp.losses.SoftBCEWithLogitsLoss(pos_weight=pos_weight)
-    if cfg.loss == "Dice_WCE_Loss":
-        lossfn = DiceWCELoss()
-
-    return lossfn
